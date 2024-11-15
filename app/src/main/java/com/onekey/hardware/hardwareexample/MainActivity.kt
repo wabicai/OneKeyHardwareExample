@@ -220,9 +220,14 @@ class MainActivity : AppCompatActivity() {
     // deviceId为空
     val deviceId = ""
     fun searchDevices(view: View) {
-        webview.callHandler("bridgeCommonCall", JsonObject().apply {
+        val dataJson = JsonObject().apply {
+            addProperty("connectId", connectId)
+        }
+        val json = JsonObject().apply {
             addProperty("name", "searchDevices")
-        }.toString()) { value ->
+            add("data", dataJson)
+        }
+        webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("searchDevices result", value)
         }
     }
@@ -340,7 +345,7 @@ class MainActivity : AppCompatActivity() {
             addProperty("deviceId", deviceId)
         }
         val json = JsonObject().apply {
-            addProperty("name", "checkBleFirmwareRelease")
+            addProperty("name", "checkBLEFirmwareRelease")
             add("data", dataJson)
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
