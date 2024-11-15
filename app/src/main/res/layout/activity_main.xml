@@ -5,29 +5,74 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:padding="16dp"
     tools:context=".MainActivity">
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:onClick="searchDevices"
-        android:text="搜索设备" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:onClick="getFeatures"
-        android:text="getFeatures" />
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:onClick="searchDevices"
+                android:text="搜索设备" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:onClick="btcGetAddress"
-        android:text="btcGetAddress" />
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:onClick="getFeatures"
+                android:text="getFeatures" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:onClick="btcGetAddress"
+                android:text="btcGetAddress" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:onClick="evmGetAddress"
+                android:text="evmGetAddress" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:onClick="checkFirmwareRelease"
+                android:text="检查固件版本" />
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:onClick="checkBleFirmwareRelease"
+                android:text="检查蓝牙固件版本" />
+
+            <Button
+                android:id="@+id/btnGetConnectedDevices"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:onClick="getConnectedDevices"
+                android:text="Get Connected Devices" />
+
+        </LinearLayout>
+    </ScrollView>
 
     <com.smallbuer.jsbridge.core.BridgeWebView
         android:id="@+id/webview"
         android:layout_width="0dp"
         android:layout_height="0dp" />
+
 </LinearLayout>

@@ -2,6 +2,8 @@ package com.onekey.hardware.hardwareexample
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.net.Uri
+import android.content.Intent
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -42,6 +44,7 @@ import no.nordicsemi.android.kotlin.ble.core.scanner.FilteredServiceUuid
 import no.nordicsemi.android.kotlin.ble.scanner.BleScanner
 import no.nordicsemi.android.kotlin.ble.scanner.aggregator.BleScanResultAggregator
 import java.util.UUID
+import android.bluetooth.BluetoothManager
 
 data class OneKeyDeviceInfo(
     val id: String, val name: String
@@ -143,20 +146,23 @@ class MainActivity : AppCompatActivity() {
             override fun handler(context: Context?, data: String?, function: CallBackFunction?) {
                 lifecycleScope.launch(Dispatchers.Main) {
                     val macAddress = JsonParser.parseString(data).asJsonObject.get("uuid").asString
-                    if (ActivityCompat.checkSelfPermission(
-                            this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        ActivityCompat.requestPermissions(
-                            this@MainActivity,
-                            arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
-                            REQUEST_PERMISSION_BLUETOOTH
-                        )
-                        function?.onCallBack(JsonObject().apply {
-                            addProperty("error", 800)
-                        }.toString())
-                        return@launch
-                    } else {
+                    Log.d("connect", "macAddress: $macAddress")
+                    // if (ActivityCompat.checkSelfPermission(
+                    //         this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT
+                    //     ) != PackageManager.PERMISSION_GRANTED
+                    // ) {
+                    //     Log.d("connect", "requestPermissions")
+                    //     ActivityCompat.requestPermissions(
+                    //         this@MainActivity,
+                    //         arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                    //         REQUEST_PERMISSION_BLUETOOTH
+                    //     )
+                    //     function?.onCallBack(JsonObject().apply {
+                    //         addProperty("error", 800)
+                    //     }.toString())
+                    //     return@launch
+                    // } else {
+                        Log.d("connect", "connect")
                         if (connection?.isConnected == true) connection?.discoverServices()
                         connection = ClientBleGatt.connect(this@MainActivity, macAddress, this)
                         val services = connection?.discoverServices()
@@ -179,7 +185,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         }?.launchIn(lifecycleScope)
                         function?.onCallBack("")
-                    }
+                    // }
                 }
                 Toast.makeText(this@MainActivity, "connect:$data", Toast.LENGTH_SHORT).show()
             }
@@ -209,33 +215,136 @@ class MainActivity : AppCompatActivity() {
         webview.loadUrl("file:///android_asset/index.html")
     }
 
-    val connectId = "EA:21:88:12:75:86"
+    // 设备mac地址
+    val connectId = "C5:CD:4A:8D:D9:2D"
+    // deviceId为空
     val deviceId = ""
     fun searchDevices(view: View) {
-        webview.callHandler("searchDevice", "") { value ->
+        webview.callHandler("bridgeCommonCall", JsonObject().apply {
+            addProperty("name", "searchDevices")
+        }.toString()) { value ->
             Log.d("searchDevices result", value)
         }
     }
 
     fun getFeatures(view: View) {
-        val json = JsonObject().apply {
+        val dataJson = JsonObject().apply {
             addProperty("connectId", connectId)
         }
-        webview.callHandler("getFeatures", json.toString()) { value ->
+        val json = JsonObject().apply {
+            addProperty("name", "getFeatures")
+            add("data", dataJson)
+        }
+        webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("getFeatures result", value)
         }
     }
 
     fun btcGetAddress(view: View) {
-        val json = JsonObject().apply {
+        val dataJson = JsonObject().apply {
             addProperty("connectId", connectId)
             addProperty("deviceId", deviceId)
             addProperty("path", "m/44'/0'/0'/0/0")
             addProperty("coin", "btc")
             addProperty("showOnOneKey", false)
         }
-        webview.callHandler("btcGetAddress", json.toString()) { value ->
+
+        val json = JsonObject().apply {
+            addProperty("name", "btcGetAddress")
+            add("data", dataJson)
+        }
+
+        webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("btcGetAddress result", value)
+        }
+    }
+
+    fun evmGetAddress(view: View) {
+        val dataJson = JsonObject().apply {
+            addProperty("connectId", connectId)
+            addProperty("deviceId", deviceId)
+            addProperty("path", "m/44'/60'/0'/0/0")
+            addProperty("chainId", 1)
+            addProperty("showOnOneKey", true)
+        }
+        val json = JsonObject().apply {
+            addProperty("name", "evmGetAddress")
+            add("data", dataJson)
+        }
+        webview.callHandler("bridgeCommonCall", json.toString()) { value ->
+            Log.d("evmGetAddress result", value)
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun getConnectedDevices(view: View) {
+        Log.d("getConnectedDevices", "getConnectedDevices")
+        // if (ActivityCompat.checkSelfPermission(
+        //         this,
+        //         Manifest.permission.BLUETOOTH_CONNECT
+        //     ) != PackageManager.PERMISSION_GRANTED
+        // ) {
+        //     ActivityCompat.requestPermissions(
+        //         this,
+        //         arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+        //         REQUEST_PERMISSION_BLUETOOTH
+        //     )
+        //     return
+        // }
+
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+
+        // 检查蓝牙是否开启
+        if (!bluetoothAdapter.isEnabled) {
+            Toast.makeText(this, "请先开启蓝牙", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 获取已配对设备
+        val pairedDevices = bluetoothAdapter.bondedDevices
+        
+        if (pairedDevices.isEmpty()) {
+            Toast.makeText(this, "没有已配对的设备", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // 遍历并显示已配对设备
+        pairedDevices.forEach { device ->
+            Log.d("Paired Device", "Name: ${device.name}, MAC: ${device.address}")
+            Toast.makeText(
+                this,
+                "配对设备: ${device.name}, MAC: ${device.address}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    fun checkFirmwareRelease(view: View) {
+        val dataJson = JsonObject().apply {
+            addProperty("connectId", connectId)
+            addProperty("deviceId", deviceId)
+        }
+        val json = JsonObject().apply {
+            addProperty("name", "checkFirmwareRelease")
+            add("data", dataJson)
+        }
+        webview.callHandler("bridgeCommonCall", json.toString()) { value ->
+            Log.d("checkFirmwareRelease result", value)
+        }
+    }
+
+    fun checkBleFirmwareRelease(view: View) {
+        val dataJson = JsonObject().apply {
+            addProperty("connectId", connectId)
+            addProperty("deviceId", deviceId)
+        }
+        val json = JsonObject().apply {
+            addProperty("name", "checkBleFirmwareRelease")
+            add("data", dataJson)
+        }
+        webview.callHandler("bridgeCommonCall", json.toString()) { value ->
+            Log.d("checkBleFirmwareRelease result", value)
         }
     }
 }
