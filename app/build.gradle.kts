@@ -53,4 +53,5 @@ dependencies {
 
     implementation("no.nordicsemi.android.kotlin.ble:scanner:1.0.8")
     implementation("no.nordicsemi.android.kotlin.ble:client:1.0.8")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 }

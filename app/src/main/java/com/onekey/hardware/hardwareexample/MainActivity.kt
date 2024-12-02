@@ -2,8 +2,6 @@ package com.onekey.hardware.hardwareexample
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.net.Uri
-import android.content.Intent
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -15,8 +13,6 @@ import android.util.Log
 import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -45,6 +41,11 @@ import no.nordicsemi.android.kotlin.ble.scanner.BleScanner
 import no.nordicsemi.android.kotlin.ble.scanner.aggregator.BleScanResultAggregator
 import java.util.UUID
 import android.bluetooth.BluetoothManager
+import android.app.AlertDialog
+import android.view.LayoutInflater
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import android.widget.TextView
 
 data class OneKeyDeviceInfo(
     val id: String, val name: String
@@ -63,6 +64,10 @@ class MainActivity : AppCompatActivity() {
     private var connection: ClientBleGatt? = null
     private var writeCharacteristic: ClientBleGattCharacteristic? = null
     private var notifyCharacteristic: ClientBleGattCharacteristic? = null
+
+    private var scanDialog: AlertDialog? = null
+    private var deviceAdapter: BleDeviceAdapter? = null
+    private var selectedDeviceAddress: String? = null
 
     // Demo
     @RequiresApi(Build.VERSION_CODES.S)
@@ -216,7 +221,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 设备mac地址
-    val connectId = "C5:CD:4A:8D:D9:2D"
+//    val connectId = "C5:CD:4A:8D:D9:2D"
+    var connectId = "DE:E9:AA:40:11:EE"
     // deviceId为空
     val deviceId = ""
     fun searchDevices(view: View) {
@@ -350,6 +356,68 @@ class MainActivity : AppCompatActivity() {
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("checkBleFirmwareRelease result", value)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    fun showScanDialog(view: View) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_ble_devices, null)
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.deviceList)
+        val scanStatus = dialogView.findViewById<TextView>(R.id.scanStatus)
+        
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        deviceAdapter = BleDeviceAdapter { address ->
+            selectedDeviceAddress = address
+            connectId = address
+            Toast.makeText(this, "Selected device: $address", Toast.LENGTH_SHORT).show()
+            scanDialog?.dismiss()
+            updateConnectionStatus()
+        }
+        recyclerView.adapter = deviceAdapter
+
+        scanDialog = AlertDialog.Builder(this)
+            .setTitle("Scan BLE Devices")
+            .setView(dialogView)
+            .setNegativeButton("Cancel") { dialog, _ -> 
+//                bleScanner
+                dialog.dismiss() 
+            }
+            .create()
+
+        scanDialog?.show()
+
+        // Start scanning
+        bleScanner.scan(
+            filters = listOf(
+                BleScanFilter(
+                    serviceUuid = FilteredServiceUuid(
+                        ParcelUuid.fromString("00000001-0000-1000-8000-00805f9b34fb")
+                    )
+                )
+            ),
+            settings = BleScannerSettings(
+                scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY
+            )
+        ).map { aggregator.aggregateDevices(it) }
+            .onEach { results ->
+                withContext(Dispatchers.Main) {
+                    deviceAdapter?.updateDevices(results.map { it.name })
+                    scanStatus.text = if (results.isEmpty()) {
+                        "Scanning... No devices found"
+                    } else {
+                        "Found ${results.size} devices"
+                    }
+                }
+            }
+            .launchIn(lifecycleScope)
+    }
+
+    private fun updateConnectionStatus() {
+        val statusText = findViewById<TextView>(R.id.connectionStatus)
+        statusText.text = if (connection?.isConnected == true) {
+            "Connected to: $selectedDeviceAddress"
+        } else {
+            "Not connected"
         }
     }
 }

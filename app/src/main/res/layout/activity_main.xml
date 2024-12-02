@@ -67,8 +67,24 @@
                 android:onClick="getConnectedDevices"
                 android:text="Get Connected Devices" />
 
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:onClick="showScanDialog"
+                android:text="Scan and Connect BLE Devices" />
+
         </LinearLayout>
     </ScrollView>
+
+    <TextView
+        android:id="@+id/connectionStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:gravity="center"
+        android:text="Not connected"
+        android:textStyle="bold"/>
 
     <com.smallbuer.jsbridge.core.BridgeWebView
         android:id="@+id/webview"
