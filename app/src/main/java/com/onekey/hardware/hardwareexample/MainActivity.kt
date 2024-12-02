@@ -46,6 +46,7 @@ import android.view.LayoutInflater
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.widget.TextView
+import kotlinx.coroutines.Job
 
 data class OneKeyDeviceInfo(
     val id: String, val name: String
@@ -68,6 +69,8 @@ class MainActivity : AppCompatActivity() {
     private var scanDialog: AlertDialog? = null
     private var deviceAdapter: BleDeviceAdapter? = null
     private var selectedDeviceAddress: String? = null
+
+    private var scanJob: Job? = null
 
     // Demo
     @RequiresApi(Build.VERSION_CODES.S)
@@ -136,7 +139,7 @@ class MainActivity : AppCompatActivity() {
             override fun handler(context: Context?, data: String?, function: CallBackFunction?) {
                 val jsonObject = JsonParser.parseString(data).asJsonObject
 
-                val uuid = jsonObject.get("uuid").asString
+//                val uuid = jsonObject.get("uuid").asString
                 val data = jsonObject.get("data").asString
 
                 lifecycleScope.launch(Dispatchers.Default) {
@@ -222,7 +225,8 @@ class MainActivity : AppCompatActivity() {
 
     // 设备mac地址
 //    val connectId = "C5:CD:4A:8D:D9:2D"
-    var connectId = "DE:E9:AA:40:11:EE"
+    // var connectId = "DE:E9:AA:40:11:EE"
+    var connectId = ""
     // deviceId为空
     val deviceId = ""
     fun searchDevices(view: View) {
@@ -359,8 +363,53 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkBluetoothEnabled(): Boolean {
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+
+        if (!bluetoothAdapter.isEnabled) {
+            Toast.makeText(this, "Please enable Bluetooth", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
+    }
+
+    private fun checkBluetoothPermissions(): Boolean {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+
+        val missingPermissions = permissions.filter {
+            ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                this,
+                missingPermissions.toTypedArray(),
+                REQUEST_PERMISSION_BLUETOOTH
+            )
+            return false
+        }
+        return true
+    }
+
     @RequiresApi(Build.VERSION_CODES.S)
     fun showScanDialog(view: View) {
+        // 取消之前的扫描任务
+        scanJob?.cancel()
+        
+        // 检查蓝牙权限和状态
+        if (!checkBluetoothPermissions() || !checkBluetoothEnabled()) {
+            return
+        }
+
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_ble_devices, null)
         val recyclerView = dialogView.findViewById<RecyclerView>(R.id.deviceList)
         val scanStatus = dialogView.findViewById<TextView>(R.id.scanStatus)
@@ -371,7 +420,15 @@ class MainActivity : AppCompatActivity() {
             connectId = address
             Toast.makeText(this, "Selected device: $address", Toast.LENGTH_SHORT).show()
             scanDialog?.dismiss()
+            scanJob?.cancel()
             updateConnectionStatus()
+            
+            val dataJson = JsonObject().apply {
+                addProperty("uuid", address)
+            }
+            webview.callHandler("connect", dataJson.toString()) { value ->
+                Log.d("connect result", value)
+            }
         }
         recyclerView.adapter = deviceAdapter
 
@@ -379,45 +436,65 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Scan BLE Devices")
             .setView(dialogView)
             .setNegativeButton("Cancel") { dialog, _ -> 
-//                bleScanner
+                scanJob?.cancel()
                 dialog.dismiss() 
             }
             .create()
 
         scanDialog?.show()
 
-        // Start scanning
-        bleScanner.scan(
-            filters = listOf(
-                BleScanFilter(
-                    serviceUuid = FilteredServiceUuid(
-                        ParcelUuid.fromString("00000001-0000-1000-8000-00805f9b34fb")
+        // Start scanning with timeout
+        lifecycleScope.launch {
+            scanJob = bleScanner.scan(
+                filters = listOf(
+                    BleScanFilter(
+                        serviceUuid = FilteredServiceUuid(
+                            ParcelUuid.fromString("00000001-0000-1000-8000-00805f9b34fb")
+                        )
                     )
+                ),
+                settings = BleScannerSettings(
+                    scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY
                 )
-            ),
-            settings = BleScannerSettings(
-                scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY
-            )
-        ).map { aggregator.aggregateDevices(it) }
-            .onEach { results ->
-                withContext(Dispatchers.Main) {
-                    deviceAdapter?.updateDevices(results.map { it.name })
-                    scanStatus.text = if (results.isEmpty()) {
-                        "Scanning... No devices found"
-                    } else {
-                        "Found ${results.size} devices"
+            ).map { aggregator.aggregateDevices(it) }
+                .onEach { results ->
+                    withContext(Dispatchers.Main) {
+                        deviceAdapter?.updateDevices(results)
+                        scanStatus.text = if (results.isEmpty()) {
+                            "Scanning... No devices found"
+                        } else {
+                            "Found ${results.size} devices"
+                        }
                     }
                 }
+                .launchIn(lifecycleScope)
+
+            // 10秒后自动停止扫描
+            delay(10000)
+            scanJob?.cancel()
+            withContext(Dispatchers.Main) {
+                scanStatus.text = "Scan completed"
             }
-            .launchIn(lifecycleScope)
+        }
     }
 
     private fun updateConnectionStatus() {
         val statusText = findViewById<TextView>(R.id.connectionStatus)
-        statusText.text = if (connection?.isConnected == true) {
-            "Connected to: $selectedDeviceAddress"
+        statusText.text = if (selectedDeviceAddress != null) {
+            "Selected device: $selectedDeviceAddress"
         } else {
-            "Not connected"
+            "No device selected"
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scanJob?.cancel()
+        scanDialog?.dismiss()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        scanJob?.cancel()
     }
 }

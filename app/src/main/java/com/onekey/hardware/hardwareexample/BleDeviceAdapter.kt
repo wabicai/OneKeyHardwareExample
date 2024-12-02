@@ -29,7 +29,12 @@ class BleDeviceAdapter(
         val device = devices[position]
         holder.deviceName.text = device.name ?: "Unknown Device"
         holder.deviceAddress.text = device.address
-        holder.itemView.setOnClickListener { onDeviceClick(device.address) }
+        
+        holder.itemView.isClickable = true
+        holder.itemView.isFocusable = true
+        holder.itemView.setOnClickListener { 
+            onDeviceClick(device.address)
+        }
     }
 
     override fun getItemCount() = devices.size
