@@ -47,6 +47,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.widget.TextView
 import kotlinx.coroutines.Job
+import no.nordicsemi.android.kotlin.ble.core.ServerDevice
 
 data class OneKeyDeviceInfo(
     val id: String, val name: String
@@ -71,6 +72,9 @@ class MainActivity : AppCompatActivity() {
     private var selectedDeviceAddress: String? = null
 
     private var scanJob: Job? = null
+
+    private val PREF_NAME = "BlePreferences"
+    private val LAST_DEVICE_ADDRESS = "last_device_address"
 
     // Demo
     @RequiresApi(Build.VERSION_CODES.S)
@@ -108,6 +112,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         webview = findViewById(R.id.webview)
+        
+        // 恢复上次连接的设备地址
+        val sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        selectedDeviceAddress = sharedPreferences.getString(LAST_DEVICE_ADDRESS, null)
+        if (selectedDeviceAddress != null) {
+            updateConnectionStatus()
+        }
+        
         configureWebView()
         loadHtmlFile()
         registerHandlers()
@@ -252,6 +264,7 @@ class MainActivity : AppCompatActivity() {
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("getFeatures result", value)
+            updateResultText("Features: $value")
         }
     }
 
@@ -271,6 +284,7 @@ class MainActivity : AppCompatActivity() {
 
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("btcGetAddress result", value)
+            updateResultText("BTC Address: $value")
         }
     }
 
@@ -288,6 +302,7 @@ class MainActivity : AppCompatActivity() {
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("evmGetAddress result", value)
+            updateResultText("EVM Address: $value")
         }
     }
 
@@ -346,6 +361,7 @@ class MainActivity : AppCompatActivity() {
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("checkFirmwareRelease result", value)
+            updateResultText("Firmware Release: $value")    
         }
     }
 
@@ -360,6 +376,7 @@ class MainActivity : AppCompatActivity() {
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("checkBleFirmwareRelease result", value)
+            updateResultText("BLE Firmware Release: $value")
         }
     }
 
@@ -402,10 +419,8 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.S)
     fun showScanDialog(view: View) {
-        // 取消之前的扫描任务
         scanJob?.cancel()
         
-        // 检查蓝牙权限和状态
         if (!checkBluetoothPermissions() || !checkBluetoothEnabled()) {
             return
         }
@@ -415,9 +430,18 @@ class MainActivity : AppCompatActivity() {
         val scanStatus = dialogView.findViewById<TextView>(R.id.scanStatus)
         
         recyclerView.layoutManager = LinearLayoutManager(this)
+        val scannedDevices = mutableListOf<ServerDevice>()
+        
         deviceAdapter = BleDeviceAdapter { address ->
             selectedDeviceAddress = address
             connectId = address
+            
+            // 保存选择的设备地址
+            getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString(LAST_DEVICE_ADDRESS, address)
+                .apply()
+            
             Toast.makeText(this, "Selected device: $address", Toast.LENGTH_SHORT).show()
             scanDialog?.dismiss()
             scanJob?.cancel()
@@ -427,10 +451,11 @@ class MainActivity : AppCompatActivity() {
                 addProperty("uuid", address)
             }
             webview.callHandler("connect", dataJson.toString()) { value ->
-                Log.d("connect result", value)
+                updateResultText("Connect Result: $value")
             }
         }
         recyclerView.adapter = deviceAdapter
+        recyclerView.visibility = View.GONE // 初始隐藏列表
 
         scanDialog = AlertDialog.Builder(this)
             .setTitle("Scan BLE Devices")
@@ -443,8 +468,9 @@ class MainActivity : AppCompatActivity() {
 
         scanDialog?.show()
 
-        // Start scanning with timeout
         lifecycleScope.launch {
+            scanStatus.text = "Scanning..."
+            
             scanJob = bleScanner.scan(
                 filters = listOf(
                     BleScanFilter(
@@ -458,22 +484,22 @@ class MainActivity : AppCompatActivity() {
                 )
             ).map { aggregator.aggregateDevices(it) }
                 .onEach { results ->
-                    withContext(Dispatchers.Main) {
-                        deviceAdapter?.updateDevices(results)
-                        scanStatus.text = if (results.isEmpty()) {
-                            "Scanning... No devices found"
-                        } else {
-                            "Found ${results.size} devices"
-                        }
-                    }
+                    scannedDevices.clear()
+                    scannedDevices.addAll(results)
                 }
                 .launchIn(lifecycleScope)
 
-            // 10秒后自动停止扫描
-            delay(10000)
+            delay(2000)
             scanJob?.cancel()
+            
             withContext(Dispatchers.Main) {
-                scanStatus.text = "Scan completed"
+                recyclerView.visibility = View.VISIBLE
+                deviceAdapter?.updateDevices(scannedDevices)
+                scanStatus.text = if (scannedDevices.isEmpty()) {
+                    "No devices found"
+                } else {
+                    "Found ${scannedDevices.size} devices"
+                }
             }
         }
     }
@@ -496,5 +522,10 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         scanJob?.cancel()
+    }
+
+    private fun updateResultText(result: String) {
+        val resultText = findViewById<TextView>(R.id.resultText)
+        resultText.text = result
     }
 }

@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="16dp" tools:context=".MainActivity">
 
-    <ScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
 
@@ -19,10 +19,12 @@
 
             <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:onClick="checkBleFirmwareRelease" android:text="检查蓝牙固件版本" />
 
+            <TextView android:id="@+id/resultText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:textSize="14sp" android:padding="8dp" android:background="#f5f5f5"/>
+
         </LinearLayout>
     </ScrollView>
 
-    <TextView android:id="@+id/connectionStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="16dp" android:gravity="center" android:text="Not connected" android:textStyle="bold"/>
+    <TextView android:id="@+id/connectionStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="16dp" android:gravity="center" android:textStyle="bold"/>
 
     <com.smallbuer.jsbridge.core.BridgeWebView android:id="@+id/webview" android:layout_width="0dp" android:layout_height="0dp" />
 
