@@ -152,10 +152,18 @@ function registerBridgeHandler() {
     console.log("bridgeCommonCall", data);
     try {
       const { name, data: methodData } = JSON.parse(data);
-      const { connectId, deviceId, ...rest } = methodData;
+      const { connectId, deviceId, ...params } = methodData;
 
       const SDK = await getHardwareSDKInstance();
-      const response = await SDK[name](connectId, deviceId, rest);
+
+      let response;
+      if (!SDK[name]) {
+        throw new Error(`Method ${name} not found`);
+      }
+
+      // Handle different parameter patterns
+      response = await SDK[name](connectId, deviceId, params);
+
       callback(response);
     } catch (e) {
       console.error(e);

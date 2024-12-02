@@ -2,8 +2,6 @@ package com.onekey.hardware.hardwareexample
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.net.Uri
-import android.content.Intent
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -15,8 +13,6 @@ import android.util.Log
 import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
@@ -45,6 +41,13 @@ import no.nordicsemi.android.kotlin.ble.scanner.BleScanner
 import no.nordicsemi.android.kotlin.ble.scanner.aggregator.BleScanResultAggregator
 import java.util.UUID
 import android.bluetooth.BluetoothManager
+import android.app.AlertDialog
+import android.view.LayoutInflater
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import android.widget.TextView
+import kotlinx.coroutines.Job
+import no.nordicsemi.android.kotlin.ble.core.ServerDevice
 
 data class OneKeyDeviceInfo(
     val id: String, val name: String
@@ -63,6 +66,15 @@ class MainActivity : AppCompatActivity() {
     private var connection: ClientBleGatt? = null
     private var writeCharacteristic: ClientBleGattCharacteristic? = null
     private var notifyCharacteristic: ClientBleGattCharacteristic? = null
+
+    private var scanDialog: AlertDialog? = null
+    private var deviceAdapter: BleDeviceAdapter? = null
+    private var selectedDeviceAddress: String? = null
+
+    private var scanJob: Job? = null
+
+    private val PREF_NAME = "BlePreferences"
+    private val LAST_DEVICE_ADDRESS = "last_device_address"
 
     // Demo
     @RequiresApi(Build.VERSION_CODES.S)
@@ -100,6 +112,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         webview = findViewById(R.id.webview)
+        
+        // 恢复上次连接的设备地址
+        val sharedPreferences = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        selectedDeviceAddress = sharedPreferences.getString(LAST_DEVICE_ADDRESS, null)
+        if (selectedDeviceAddress != null) {
+            updateConnectionStatus()
+        }
+        
         configureWebView()
         loadHtmlFile()
         registerHandlers()
@@ -131,7 +151,7 @@ class MainActivity : AppCompatActivity() {
             override fun handler(context: Context?, data: String?, function: CallBackFunction?) {
                 val jsonObject = JsonParser.parseString(data).asJsonObject
 
-                val uuid = jsonObject.get("uuid").asString
+//                val uuid = jsonObject.get("uuid").asString
                 val data = jsonObject.get("data").asString
 
                 lifecycleScope.launch(Dispatchers.Default) {
@@ -216,13 +236,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 设备mac地址
-    val connectId = "C5:CD:4A:8D:D9:2D"
+//    val connectId = "C5:CD:4A:8D:D9:2D"
+    // var connectId = "DE:E9:AA:40:11:EE"
+    var connectId = ""
     // deviceId为空
     val deviceId = ""
     fun searchDevices(view: View) {
-        webview.callHandler("bridgeCommonCall", JsonObject().apply {
+        val dataJson = JsonObject().apply {
+            addProperty("connectId", connectId)
+        }
+        val json = JsonObject().apply {
             addProperty("name", "searchDevices")
-        }.toString()) { value ->
+            add("data", dataJson)
+        }
+        webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("searchDevices result", value)
         }
     }
@@ -237,6 +264,7 @@ class MainActivity : AppCompatActivity() {
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("getFeatures result", value)
+            updateResultText("Features: $value")
         }
     }
 
@@ -256,6 +284,7 @@ class MainActivity : AppCompatActivity() {
 
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("btcGetAddress result", value)
+            updateResultText("BTC Address: $value")
         }
     }
 
@@ -273,6 +302,7 @@ class MainActivity : AppCompatActivity() {
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("evmGetAddress result", value)
+            updateResultText("EVM Address: $value")
         }
     }
 
@@ -331,6 +361,7 @@ class MainActivity : AppCompatActivity() {
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("checkFirmwareRelease result", value)
+            updateResultText("Firmware Release: $value")    
         }
     }
 
@@ -340,11 +371,161 @@ class MainActivity : AppCompatActivity() {
             addProperty("deviceId", deviceId)
         }
         val json = JsonObject().apply {
-            addProperty("name", "checkBleFirmwareRelease")
+            addProperty("name", "checkBLEFirmwareRelease")
             add("data", dataJson)
         }
         webview.callHandler("bridgeCommonCall", json.toString()) { value ->
             Log.d("checkBleFirmwareRelease result", value)
+            updateResultText("BLE Firmware Release: $value")
         }
+    }
+
+    private fun checkBluetoothEnabled(): Boolean {
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothAdapter = bluetoothManager.adapter
+
+        if (!bluetoothAdapter.isEnabled) {
+            Toast.makeText(this, "Please enable Bluetooth", Toast.LENGTH_SHORT).show()
+            return false
+        }
+        return true
+    }
+
+    private fun checkBluetoothPermissions(): Boolean {
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_SCAN)
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+
+        val missingPermissions = permissions.filter {
+            ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(
+                this,
+                missingPermissions.toTypedArray(),
+                REQUEST_PERMISSION_BLUETOOTH
+            )
+            return false
+        }
+        return true
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    fun showScanDialog(view: View) {
+        scanJob?.cancel()
+        
+        if (!checkBluetoothPermissions() || !checkBluetoothEnabled()) {
+            return
+        }
+
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_ble_devices, null)
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.deviceList)
+        val scanStatus = dialogView.findViewById<TextView>(R.id.scanStatus)
+        
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        val scannedDevices = mutableListOf<ServerDevice>()
+        
+        deviceAdapter = BleDeviceAdapter { address ->
+            selectedDeviceAddress = address
+            connectId = address
+            
+            // 保存选择的设备地址
+            getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString(LAST_DEVICE_ADDRESS, address)
+                .apply()
+            
+            Toast.makeText(this, "Selected device: $address", Toast.LENGTH_SHORT).show()
+            scanDialog?.dismiss()
+            scanJob?.cancel()
+            updateConnectionStatus()
+            
+            val dataJson = JsonObject().apply {
+                addProperty("uuid", address)
+            }
+            webview.callHandler("connect", dataJson.toString()) { value ->
+                updateResultText("Connect Result: $value")
+            }
+        }
+        recyclerView.adapter = deviceAdapter
+        recyclerView.visibility = View.GONE // 初始隐藏列表
+
+        scanDialog = AlertDialog.Builder(this)
+            .setTitle("Scan BLE Devices")
+            .setView(dialogView)
+            .setNegativeButton("Cancel") { dialog, _ -> 
+                scanJob?.cancel()
+                dialog.dismiss() 
+            }
+            .create()
+
+        scanDialog?.show()
+
+        lifecycleScope.launch {
+            scanStatus.text = "Scanning..."
+            
+            scanJob = bleScanner.scan(
+                filters = listOf(
+                    BleScanFilter(
+                        serviceUuid = FilteredServiceUuid(
+                            ParcelUuid.fromString("00000001-0000-1000-8000-00805f9b34fb")
+                        )
+                    )
+                ),
+                settings = BleScannerSettings(
+                    scanMode = BleScanMode.SCAN_MODE_LOW_LATENCY
+                )
+            ).map { aggregator.aggregateDevices(it) }
+                .onEach { results ->
+                    scannedDevices.clear()
+                    scannedDevices.addAll(results)
+                }
+                .launchIn(lifecycleScope)
+
+            delay(2000)
+            scanJob?.cancel()
+            
+            withContext(Dispatchers.Main) {
+                recyclerView.visibility = View.VISIBLE
+                deviceAdapter?.updateDevices(scannedDevices)
+                scanStatus.text = if (scannedDevices.isEmpty()) {
+                    "No devices found"
+                } else {
+                    "Found ${scannedDevices.size} devices"
+                }
+            }
+        }
+    }
+
+    private fun updateConnectionStatus() {
+        val statusText = findViewById<TextView>(R.id.connectionStatus)
+        statusText.text = if (selectedDeviceAddress != null) {
+            "Selected device: $selectedDeviceAddress"
+        } else {
+            "No device selected"
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scanJob?.cancel()
+        scanDialog?.dismiss()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        scanJob?.cancel()
+    }
+
+    private fun updateResultText(result: String) {
+        val resultText = findViewById<TextView>(R.id.resultText)
+        resultText.text = result
     }
 }

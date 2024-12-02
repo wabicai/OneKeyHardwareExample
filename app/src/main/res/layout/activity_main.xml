@@ -1,78 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    tools:context=".MainActivity">
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="16dp" tools:context=".MainActivity">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
 
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:onClick="searchDevices"
-                android:text="搜索设备" />
+            <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:onClick="showScanDialog" android:text="Scan and Connect BLE Devices" />
 
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:onClick="getFeatures"
-                android:text="getFeatures" />
+            <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:onClick="getFeatures" android:text="getFeatures" />
 
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:onClick="btcGetAddress"
-                android:text="btcGetAddress" />
+            <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:onClick="btcGetAddress" android:text="btcGetAddress" />
 
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:onClick="evmGetAddress"
-                android:text="evmGetAddress" />
+            <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:onClick="evmGetAddress" android:text="evmGetAddress" />
 
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:onClick="checkFirmwareRelease"
-                android:text="检查固件版本" />
+            <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:onClick="checkFirmwareRelease" android:text="检查固件版本" />
 
-            <Button
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:onClick="checkBleFirmwareRelease"
-                android:text="检查蓝牙固件版本" />
+            <Button android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp" android:onClick="checkBleFirmwareRelease" android:text="检查蓝牙固件版本" />
 
-            <Button
-                android:id="@+id/btnGetConnectedDevices"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:onClick="getConnectedDevices"
-                android:text="Get Connected Devices" />
+            <TextView android:id="@+id/resultText" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:textSize="14sp" android:padding="8dp" android:background="#f5f5f5"/>
 
         </LinearLayout>
     </ScrollView>
 
-    <com.smallbuer.jsbridge.core.BridgeWebView
-        android:id="@+id/webview"
-        android:layout_width="0dp"
-        android:layout_height="0dp" />
+    <TextView android:id="@+id/connectionStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="16dp" android:gravity="center" android:textStyle="bold"/>
+
+    <com.smallbuer.jsbridge.core.BridgeWebView android:id="@+id/webview" android:layout_width="0dp" android:layout_height="0dp" />
 
 </LinearLayout>
