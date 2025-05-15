@@ -259,6 +259,7 @@ class MainActivity : AppCompatActivity() {
             addProperty("path", "m/44'/0'/0'/0/0")
             addProperty("coin", "btc")
             addProperty("showOnOneKey", false)
+            addProperty("useEmptyPassphrase", true)
         }
 
         val json = JsonObject().apply {
