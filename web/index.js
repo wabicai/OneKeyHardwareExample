@@ -63,7 +63,6 @@ function getHardwareSDKInstance() {
       resolve(HardwareSDK);
       listenHardwareEvent(HardwareSDK);
     } catch (e) {
-      console.log("HardwareSDK init failed", e);
       reject(e);
     }
   });
@@ -138,7 +137,7 @@ function listenHardwareEvent(SDK) {
         type: UI_RESPONSE.RECEIVE_PASSPHRASE,
         payload: {
           value: "",
-          passphraseOnDevice: false,
+          passphraseOnDevice: true,
           save: false,
         },
       });
