@@ -280,6 +280,7 @@ class MainActivity : AppCompatActivity() {
             addProperty("path", "m/44'/60'/0'/0/0")
             addProperty("chainId", 1)
             addProperty("showOnOneKey", true)
+            addProperty("useEmptyPassphrase", true)
         }
         val json = JsonObject().apply {
             addProperty("name", "evmGetAddress")
