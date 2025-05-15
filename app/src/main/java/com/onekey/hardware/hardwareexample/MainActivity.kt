@@ -167,29 +167,45 @@ class MainActivity : AppCompatActivity() {
                 lifecycleScope.launch(Dispatchers.Main) {
                     val macAddress = JsonParser.parseString(data).asJsonObject.get("uuid").asString
                     Log.d("connect", "macAddress: $macAddress")
-                    Log.d("connect", "connect")
-                    if (connection?.isConnected == true) connection?.discoverServices()
-                    connection = ClientBleGatt.connect(this@MainActivity, macAddress, this)
-                    val services = connection?.discoverServices()
-                    val service =
-                        services?.findService(UUID.fromString("00000001-0000-1000-8000-00805f9b34fb"))
+                    // if (ActivityCompat.checkSelfPermission(
+                    //         this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT
+                    //     ) != PackageManager.PERMISSION_GRANTED
+                    // ) {
+                    //     Log.d("connect", "requestPermissions")
+                    //     ActivityCompat.requestPermissions(
+                    //         this@MainActivity,
+                    //         arrayOf(Manifest.permission.BLUETOOTH_CONNECT),
+                    //         REQUEST_PERMISSION_BLUETOOTH
+                    //     )
+                    //     function?.onCallBack(JsonObject().apply {
+                    //         addProperty("error", 800)
+                    //     }.toString())
+                    //     return@launch
+                    // } else {
+                        Log.d("connect", "connect")
+                        if (connection?.isConnected == true) connection?.discoverServices()
+                        connection = ClientBleGatt.connect(this@MainActivity, macAddress, this)
+                        val services = connection?.discoverServices()
+                        val service =
+                            services?.findService(UUID.fromString("00000001-0000-1000-8000-00805f9b34fb"))
 
-                    writeCharacteristic =
-                        service?.findCharacteristic(UUID.fromString("00000002-0000-1000-8000-00805f9b34fb"))
-                    notifyCharacteristic =
-                        service?.findCharacteristic(UUID.fromString("00000003-0000-1000-8000-00805f9b34fb"))
-                    notifyCharacteristic?.getNotifications()?.onEach {
-                        Log.d("read notifyCharacteristic", HexUtil.toHex(it.value))
-                        withContext(Dispatchers.Main) {
-                            webview.callHandler(
-                                "monitorCharacteristic",
-                                HexUtil.toHex(it.value)
-                            ) { value ->
-                                Log.d("monitorCharacteristic result", value)
+                        writeCharacteristic =
+                            service?.findCharacteristic(UUID.fromString("00000002-0000-1000-8000-00805f9b34fb"))
+                        notifyCharacteristic =
+                            service?.findCharacteristic(UUID.fromString("00000003-0000-1000-8000-00805f9b34fb"))
+                        notifyCharacteristic?.getNotifications()?.onEach {
+                            Log.d("read notifyCharacteristic", HexUtil.toHex(it.value))
+                            withContext(Dispatchers.Main) {
+                                webview.callHandler(
+                                    "monitorCharacteristic",
+                                    HexUtil.toHex(it.value)
+                                ) { value ->
+                                    Log.d("monitorCharacteristic result", value)
+                                }
                             }
-                        }
-                    }?.launchIn(lifecycleScope)
-                    function?.onCallBack("")
+                        }?.launchIn(lifecycleScope)
+                        function?.onCallBack("")
+                    // }
                 }
                 Toast.makeText(this@MainActivity, "connect:$data", Toast.LENGTH_SHORT).show()
             }
@@ -259,6 +275,7 @@ class MainActivity : AppCompatActivity() {
             addProperty("path", "m/44'/0'/0'/0/0")
             addProperty("coin", "btc")
             addProperty("showOnOneKey", false)
+            addProperty("useEmptyPassphrase", true)
         }
 
         val json = JsonObject().apply {
@@ -434,11 +451,7 @@ class MainActivity : AppCompatActivity() {
             val dataJson = JsonObject().apply {
                 addProperty("uuid", address)
             }
-            val json = JsonObject().apply {
-                addProperty("name", "searchDevices")
-                add("data", dataJson)
-            }   
-            webview.callHandler("bridgeCommonCall", json.toString()) { value ->
+            webview.callHandler("connect", dataJson.toString()) { value ->
                 updateResultText("Connect Result: $value")
             }
         }
