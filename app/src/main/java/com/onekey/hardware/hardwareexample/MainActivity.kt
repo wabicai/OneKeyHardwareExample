@@ -48,6 +48,13 @@ import androidx.recyclerview.widget.RecyclerView
 import android.widget.TextView
 import kotlinx.coroutines.Job
 import no.nordicsemi.android.kotlin.ble.core.ServerDevice
+import android.widget.Button
+import android.view.View.OnClickListener
+import android.os.Handler
+import android.os.Looper
+import android.widget.EditText
+import android.text.InputType
+import android.widget.LinearLayout
 
 data class OneKeyDeviceInfo(
     val id: String, val name: String
@@ -143,6 +150,194 @@ class MainActivity : AppCompatActivity() {
                         function?.onCallBack(Gson().toJson(deviceList))
                     }
                 }
+            }
+        })
+
+        // Add PIN input handler
+        webview.addHandlerLocal("requestPinInput", object : BridgeHandler() {
+            override fun handler(context: Context?, data: String?, function: CallBackFunction?) {
+                Log.d("PIN Input", "Showing PIN input dialog")
+                
+                // Create a custom PIN input dialog
+                val builder = AlertDialog.Builder(this@MainActivity)
+                builder.setTitle("PIN Input")
+                
+                // Define keyboardMap as in the React code
+                val keyboardMap = arrayOf("7", "8", "9", "4", "5", "6", "1", "2", "3")
+                
+                // Inflate the custom layout
+                val inflater = LayoutInflater.from(this@MainActivity)
+                val view = inflater.inflate(R.layout.dialog_pin_input, null)
+                
+                // Get button and display references
+                val pinDisplay = view.findViewById<TextView>(R.id.pinDisplay)
+                val pinButtons = arrayOf(
+                    view.findViewById<Button>(R.id.pinButton1),
+                    view.findViewById<Button>(R.id.pinButton2),
+                    view.findViewById<Button>(R.id.pinButton3),
+                    view.findViewById<Button>(R.id.pinButton4),
+                    view.findViewById<Button>(R.id.pinButton5),
+                    view.findViewById<Button>(R.id.pinButton6),
+                    view.findViewById<Button>(R.id.pinButton7),
+                    view.findViewById<Button>(R.id.pinButton8),
+                    view.findViewById<Button>(R.id.pinButton9)
+                )
+                val confirmButton = view.findViewById<Button>(R.id.confirmButton)
+                val switchToDeviceButton = view.findViewById<Button>(R.id.switchToDeviceButton)
+                
+                // Store the PIN sequence
+                val pinSequence = StringBuilder()
+                
+                // Set the view to the dialog
+                builder.setView(view)
+                
+                // No need for standard dialog buttons as we have custom ones
+                builder.setCancelable(false)
+                
+                // Create the dialog
+                val dialog = builder.create()
+                
+                // Set up button click listeners
+                for (i in pinButtons.indices) {
+                    pinButtons[i].setOnClickListener {
+                        // Add the mapped number from keyboardMap array based on button index
+                        val mappedNumber = keyboardMap[i]
+                        pinSequence.append(mappedNumber)
+                        
+                        // Update the display with dots for each entered digit
+                        pinDisplay.text = "•".repeat(pinSequence.length)
+                        
+                        // Visual feedback for button press
+                        it.isPressed = true
+                        Handler(Looper.getMainLooper()).postDelayed({ it.isPressed = false }, 200)
+                    }
+                }
+                
+                // Set up confirm button
+                confirmButton.setOnClickListener {
+                    if (pinSequence.isNotEmpty()) {
+                        // Return the PIN sequence
+                        function?.onCallBack(pinSequence.toString())
+                        dialog.dismiss()
+                    } else {
+                        Toast.makeText(this@MainActivity, "请输入PIN码", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                
+                // Set up switch to device button
+                switchToDeviceButton.setOnClickListener {
+                    // Return empty string to use hardware PIN entry
+                    function?.onCallBack("")
+                    dialog.dismiss()
+                }
+                
+                // Show dialog on UI thread
+                lifecycleScope.launch(Dispatchers.Main) {
+                    dialog.show()
+                }
+            }
+        })
+
+        // Add Passphrase input handler
+        webview.addHandlerLocal("requestPassphrase", object : BridgeHandler() {
+            override fun handler(context: Context?, data: String?, function: CallBackFunction?) {
+                Log.d("Passphrase Input", "Showing passphrase input dialog")
+                
+                // Use AlertDialog to show passphrase input dialog
+                val builder = AlertDialog.Builder(this@MainActivity)
+                builder.setTitle("输入密码") // Enter passphrase
+                
+                // Create a custom view for passphrase input
+                val inflater = LayoutInflater.from(this@MainActivity)
+                val view = LinearLayout(this@MainActivity)
+                view.orientation = LinearLayout.VERTICAL
+                view.setPadding(50, 50, 50, 50)
+                
+                // Create passphrase input EditText
+                val input = EditText(this@MainActivity)
+                input.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                input.hint = "请输入密码" // Enter passphrase
+                view.addView(input)
+                
+                // Set the view to the dialog
+                builder.setView(view)
+                
+                // Add option to use hardware passphrase instead
+                builder.setNeutralButton("在设备上输入") { dialog, _ ->
+                    dialog.dismiss()
+                    function?.onCallBack("")  // Empty string means use hardware passphrase
+                }
+                
+                // Add buttons for submit and cancel
+                builder.setPositiveButton("确认") { dialog, _ ->
+                    val passphrase = input.text.toString()
+                    function?.onCallBack(passphrase)
+                    dialog.dismiss()
+                }
+                
+                builder.setNegativeButton("取消") { dialog, _ ->
+                    dialog.cancel()
+                    function?.onCallBack("")  // If canceled, use hardware passphrase
+                }
+                
+                // Show dialog on UI thread
+                lifecycleScope.launch(Dispatchers.Main) {
+                    builder.show()
+                }
+            }
+        })
+
+        // Add button confirmation handler
+        webview.addHandlerLocal("requestButtonConfirmation", object : BridgeHandler() {
+            override fun handler(context: Context?, data: String?, function: CallBackFunction?) {
+                Log.d("Button Confirmation", "Showing confirmation dialog")
+                
+                // Parse message from data if available
+                var message = "请在硬件设备上确认此操作" // Please confirm this action on your device
+                if (data != null) {
+                    try {
+                        val jsonObject = JsonParser.parseString(data).asJsonObject
+                        if (jsonObject.has("message")) {
+                            message = jsonObject.get("message").asString
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Button Confirmation", "Error parsing data", e)
+                    }
+                }
+                
+                // Show confirmation dialog
+                val builder = AlertDialog.Builder(this@MainActivity)
+                builder.setTitle("确认操作") // Confirm Operation
+                builder.setMessage(message)
+                builder.setPositiveButton("了解") { dialog, _ -> // OK
+                    dialog.dismiss()
+                    // No callback needed, just dismiss the dialog
+                }
+                
+                // Show dialog on UI thread
+                lifecycleScope.launch(Dispatchers.Main) {
+                    builder.show()
+                }
+                
+                // Return empty response if function is not null
+                function?.onCallBack("")
+            }
+        })
+
+        // Add close UI window handler
+        webview.addHandlerLocal("closeUIWindow", object : BridgeHandler() {
+            override fun handler(context: Context?, data: String?, function: CallBackFunction?) {
+                Log.d("Close UI", "Received request to close UI windows")
+                
+                // Here we would dismiss any open dialogs
+                // Since we're handling dialogs individually and each has its own dismissal logic,
+                // there's not much to do here in this implementation.
+                
+                // Optionally show a toast message to indicate operation completed
+                Toast.makeText(this@MainActivity, "操作已完成", Toast.LENGTH_SHORT).show()
+                
+                // Return empty response if function is not null
+                function?.onCallBack("")
             }
         })
 

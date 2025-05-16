@@ -125,10 +125,22 @@ function createLowlevelPlugin() {
 function listenHardwareEvent(SDK) {
   SDK.on(UI_EVENT, (message) => {
     if (message.type === UI_REQUEST.REQUEST_PIN) {
-      // enter pin code on the device
-      SDK.uiResponse({
-        type: UI_RESPONSE.RECEIVE_PIN,
-        payload: "@@ONEKEY_INPUT_PIN_IN_DEVICE",
+      // Request PIN from Android app or use hardware PIN
+      console.log("PIN requested, calling requestPinInput handler");
+      bridge.callHandler("requestPinInput", {}, (response) => {
+        // If response is not empty, use it as PIN, otherwise use hardware PIN
+        const pinPayload =
+          response && response !== ""
+            ? response
+            : "@@ONEKEY_INPUT_PIN_IN_DEVICE";
+        console.log(
+          "PIN response received:",
+          response ? "PIN entered" : "Using hardware PIN"
+        );
+        SDK.uiResponse({
+          type: UI_RESPONSE.RECEIVE_PIN,
+          payload: pinPayload,
+        });
       });
     }
     if (message.type === UI_REQUEST.REQUEST_PASSPHRASE) {
@@ -143,7 +155,17 @@ function listenHardwareEvent(SDK) {
       });
     }
     if (message.type === UI_REQUEST.REQUEST_BUTTON) {
-      console.log("request button, should show dialog on client");
+      console.log("Button confirmation requested, showing prompt on client");
+      // Just notify Android to show a confirmation dialog, no callback needed
+      bridge.callHandler("requestButtonConfirmation", {
+        message: message.payload?.message || "Please confirm on your device",
+      });
+    }
+
+    if (message.type === UI_REQUEST.CLOSE_UI_WINDOW) {
+      console.log("Request to close UI window received");
+      // Just notify Android to close any open prompts/dialogs, no callback needed
+      bridge.callHandler("closeUIWindow", {});
     }
   });
 }
