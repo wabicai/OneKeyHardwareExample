@@ -51,7 +51,7 @@ function getHardwareSDKInstance() {
     const settings = {
       env: "lowlevel",
       fetchConfig: true,
-      debug: true,
+      debug: false,
     };
 
     const plugin = createLowlevelPlugin();
