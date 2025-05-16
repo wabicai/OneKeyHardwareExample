@@ -82,6 +82,15 @@ class MainActivity : AppCompatActivity() {
 
     private val PREF_NAME = "BlePreferences"
     private val LAST_DEVICE_ADDRESS = "last_device_address"
+    
+    // 设备类型常量
+    private val DEVICE_TYPE_CLASSIC = "classic"
+    private val DEVICE_TYPE_TOUCH = "touch"
+    private val DEVICE_TYPE_PRO = "pro"
+    private val DEVICE_TYPE_UNKNOWN = "unknown"
+    
+    // 当前设备类型
+    private var currentDeviceType = DEVICE_TYPE_UNKNOWN
 
     // Demo
     @RequiresApi(Build.VERSION_CODES.S)
@@ -156,7 +165,14 @@ class MainActivity : AppCompatActivity() {
         // Add PIN input handler
         webview.addHandlerLocal("requestPinInput", object : BridgeHandler() {
             override fun handler(context: Context?, data: String?, function: CallBackFunction?) {
-                Log.d("PIN Input", "Showing PIN input dialog")
+                Log.d("PIN Input", "Showing PIN input dialog, device type: $currentDeviceType")
+                
+                // 如果设备类型不是Classic1S，则直接返回空字符串，使用设备输入
+                if (currentDeviceType != DEVICE_TYPE_CLASSIC){
+                    Log.d("PIN Input", "Device is not Classic1S, using device PIN input")
+                    function?.onCallBack("")
+                    return
+                }
                 
                 // Create a custom PIN input dialog
                 val builder = AlertDialog.Builder(this@MainActivity)
@@ -415,23 +431,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 设备mac地址
-//    val connectId = "C5:CD:4A:8D:D9:2D"
-    // var connectId = "DE:E9:AA:40:11:EE"
     var connectId = ""
-    // deviceId为空
     val deviceId = ""
-    fun searchDevices(view: View) {
-        val dataJson = JsonObject().apply {
-            addProperty("connectId", connectId)
-        }
-        val json = JsonObject().apply {
-            addProperty("name", "searchDevices")
-            add("data", dataJson)
-        }
-        webview.callHandler("bridgeCommonCall", json.toString()) { value ->
-            Log.d("searchDevices result", value)
-        }
-    }
 
     fun getFeatures(view: View) {
         val dataJson = JsonObject().apply {
@@ -623,6 +624,9 @@ class MainActivity : AppCompatActivity() {
                 .putString(LAST_DEVICE_ADDRESS, address)
                 .apply()
             
+            // 初始设置为未知类型，稍后会从API响应中更新
+            currentDeviceType = DEVICE_TYPE_UNKNOWN
+            
             Toast.makeText(this, "Selected device: $address", Toast.LENGTH_SHORT).show()
             scanDialog?.dismiss()
             scanJob?.cancel()
@@ -637,6 +641,26 @@ class MainActivity : AppCompatActivity() {
             }   
             webview.callHandler("bridgeCommonCall", json.toString()) { value ->
                 updateResultText("Connect Result: $value")
+                
+                // 从返回值中直接获取deviceType字段
+                try {
+                    val jsonResponse = JsonParser.parseString(value).asJsonObject
+                    if (jsonResponse.has("success") && jsonResponse.get("success").asBoolean) {
+                        val payload = jsonResponse.getAsJsonArray("payload")
+                        if (payload != null && payload.size() > 0) {
+                            val deviceInfo = payload.get(0).asJsonObject
+                            
+                            // 直接获取deviceType字段
+                            if (deviceInfo.has("deviceType")) {
+                                currentDeviceType = deviceInfo.get("deviceType").asString.lowercase()
+                                Log.d("DeviceType", "Device type from API: $currentDeviceType")
+                                Toast.makeText(this@MainActivity, "Device type: $currentDeviceType", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("DeviceType", "Error parsing device type from response", e)
+                }
             }
         }
         recyclerView.adapter = deviceAdapter
