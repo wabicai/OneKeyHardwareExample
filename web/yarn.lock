@@ -110,24 +110,24 @@
   resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.3.1.tgz#8831ef002114670c603c458ab8b11328406953a9"
   integrity sha512-EbqwksQwz9xDRGfDST86whPBgM65E0OH/pCgqW0GBVzO22bNE+NuIbeTb714+IfSjU3aRk47EUvXIb5bTsenKA==
 
-"@onekeyfe/hd-common-connect-sdk@^0.3.30":
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-common-connect-sdk/-/hd-common-connect-sdk-0.3.30.tgz#6498c0527b8ff621e999accb7f4aa4495d052e19"
-  integrity sha512-eJMMa9tKXnPLF/R8jXS3zVm8cFc8FE6FIlMO2xBD+SwQ8wDU+5K8OzTsQSOh5+YXDp3kbfUK3Y3fOJyeYHrchQ==
+"@onekeyfe/hd-common-connect-sdk@1.0.28":
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-common-connect-sdk/-/hd-common-connect-sdk-1.0.28.tgz#3943c25ee0cbfba4a4cc01e70d190f4d6337f509"
+  integrity sha512-h4kRbigwlp8ubpmFagguEExc90ve+4OobqmdUlKKcRzpj2SA81d/whV1A2Ii3binRlQVe/BC2MEN42emKkzMXw==
   dependencies:
-    "@onekeyfe/hd-core" "^0.3.30"
-    "@onekeyfe/hd-shared" "^0.3.30"
-    "@onekeyfe/hd-transport-http" "^0.3.30"
-    "@onekeyfe/hd-transport-lowlevel" "^0.3.30"
-    "@onekeyfe/hd-transport-webusb" "^0.3.30"
+    "@onekeyfe/hd-core" "^1.0.28"
+    "@onekeyfe/hd-shared" "^1.0.28"
+    "@onekeyfe/hd-transport-http" "^1.0.28"
+    "@onekeyfe/hd-transport-lowlevel" "^1.0.28"
+    "@onekeyfe/hd-transport-webusb" "^1.0.28"
 
-"@onekeyfe/hd-core@^0.3.30":
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-core/-/hd-core-0.3.30.tgz#6451bac8b1a078d5a18e5b83b0697bf24ebb5dab"
-  integrity sha512-/XMdqBLEicW+0sL1IL+frly7DorBU5o+N2k9cv7DLZlg7YBj3L99BmZx+g9znXLQwUhXb4k8cydOHvihUxQlqQ==
+"@onekeyfe/hd-core@^1.0.28":
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-core/-/hd-core-1.0.28.tgz#12104710f7e696eef0e4ef9254183424e080df77"
+  integrity sha512-jzl+zcLYxfF73pIlAlefd7y/mhwsCRpmk4OfQBPm7cVmO/UCjaGx6jjI/pMeMmCjfE5idcc8hVfuTnt/Zi0Ysg==
   dependencies:
-    "@onekeyfe/hd-shared" "^0.3.30"
-    "@onekeyfe/hd-transport" "^0.3.30"
+    "@onekeyfe/hd-shared" "^1.0.28"
+    "@onekeyfe/hd-transport" "^1.0.28"
     axios "^0.27.2"
     bignumber.js "^9.0.2"
     bytebuffer "^5.0.1"
@@ -135,40 +135,41 @@
     parse-uri "^1.0.7"
     semver "^7.3.7"
 
-"@onekeyfe/hd-shared@^0.3.30":
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-shared/-/hd-shared-0.3.30.tgz#86658b2f19cd1f5139947a0f162a01afc6b388a1"
-  integrity sha512-3Sy8Umkc7ahYI9mIzJgkWcz3bKuwKVCq9t8/1XKY8IbQWqPL2VW14N2hVDX+uPZ/93GFJuDWaxR4u3bJIbWYPw==
+"@onekeyfe/hd-shared@^1.0.28":
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-shared/-/hd-shared-1.0.28.tgz#e8c435f4915ad271ccba9ca4241f93f638f9e373"
+  integrity sha512-lQMgYbD4h+ZlE6az3H3OD/NRErOkMo/3cyIWBZ/bfg8acylR9MEfEVvpjSLHaYEeU/Nfd/PVCzZMTHl9XsSS4A==
 
-"@onekeyfe/hd-transport-http@^0.3.30":
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-transport-http/-/hd-transport-http-0.3.30.tgz#dd688aa547f31e324860d5643cdf2cee6e15eb2a"
-  integrity sha512-azUrW/7jVCqLiElFEej2/HHKH+YeMVxYZpdm/KafXh5KPkkS2WdyXEiy2dtTjv6Fs+WxzMVN3DL6IA++LdJ1Ig==
+"@onekeyfe/hd-transport-http@^1.0.28":
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-transport-http/-/hd-transport-http-1.0.28.tgz#af4112f8cfe6b15afb52758f7cd010328f8f7943"
+  integrity sha512-KEQAvwgmgmScDeviLYT7uClZBs6JFLFTjqLnuNGGtuUtq7SOO6vDvpr8AENTCdIyuJLdwARmQL4kq9W4B0sbkA==
   dependencies:
-    "@onekeyfe/hd-shared" "^0.3.30"
-    "@onekeyfe/hd-transport" "^0.3.30"
+    "@onekeyfe/hd-shared" "^1.0.28"
+    "@onekeyfe/hd-transport" "^1.0.28"
     axios "^0.27.2"
+    secure-json-parse "^4.0.0"
 
-"@onekeyfe/hd-transport-lowlevel@^0.3.30":
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-transport-lowlevel/-/hd-transport-lowlevel-0.3.30.tgz#b823b3b00ad1fd651270a812269a3f1a95919cc2"
-  integrity sha512-T8+wLLFsqfbP+z+cxp9U5JuTUkKXOKo/M5Wf6+aGb8/Bo872xPaKEciI0dEZ7y/qZu7TdZokBdl0V6LHHv5MVA==
+"@onekeyfe/hd-transport-lowlevel@^1.0.28":
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-transport-lowlevel/-/hd-transport-lowlevel-1.0.28.tgz#172c76f331e83e711ad24a4f0453fc7e8b050b9b"
+  integrity sha512-vANuouAz9MWpRDvrhI3oe5dKJeynzOw/mfe3Jni538m2r8ZEa10u1edTYkqIkDQg9OSH7cy/Pfv04FKzWmV0bg==
   dependencies:
-    "@onekeyfe/hd-shared" "^0.3.30"
-    "@onekeyfe/hd-transport" "^0.3.30"
+    "@onekeyfe/hd-shared" "^1.0.28"
+    "@onekeyfe/hd-transport" "^1.0.28"
 
-"@onekeyfe/hd-transport-webusb@^0.3.30":
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-transport-webusb/-/hd-transport-webusb-0.3.30.tgz#7e63938c2b6186f839625d2813ac8bb11715e1d8"
-  integrity sha512-VgG/v94jZ/qSQFA72ZJuFy9jXjcTvVg1OG7u32IU/E9DqcM1dHqju0qq3Bv+GH1Xog9n3ShcnhjEfR0cl3uIzQ==
+"@onekeyfe/hd-transport-webusb@^1.0.28":
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-transport-webusb/-/hd-transport-webusb-1.0.28.tgz#7765627b8d65601aaa4ac6b85867146e3def1592"
+  integrity sha512-P3xBtBar1f/0pl9xHTsKDUrMQyf2ah3RDkyXPlHDFvuPa/d0GlrLFt7LLNuNk1k1yuFxCyP3DPyOQ92GDPBjGQ==
   dependencies:
-    "@onekeyfe/hd-shared" "^0.3.30"
-    "@onekeyfe/hd-transport" "^0.3.30"
+    "@onekeyfe/hd-shared" "^1.0.28"
+    "@onekeyfe/hd-transport" "^1.0.28"
 
-"@onekeyfe/hd-transport@^0.3.30":
-  version "0.3.30"
-  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-transport/-/hd-transport-0.3.30.tgz#47b51416a04cef86cfed3c3301ffd7353ca343f2"
-  integrity sha512-thGFuulpvcajGVYXgRsQJaGv0E7i9LMDoTOGy2TeBm7Tdvw6HQkHpVBrxHU8LDxc4BHm1EbmyjanSwk4c+ljOw==
+"@onekeyfe/hd-transport@^1.0.28":
+  version "1.0.28"
+  resolved "https://registry.yarnpkg.com/@onekeyfe/hd-transport/-/hd-transport-1.0.28.tgz#87e2879d0e42ad6bb2e9a97233e0ecf13641ba05"
+  integrity sha512-x/fvdj7D4NXPokwLfP8nESuoSMsfmwpFlLAskEiKpskj7JE4YrTxKPL/lbSc0jJwgjwZ253wZ+ocskUT7e3ijg==
   dependencies:
     bytebuffer "^5.0.1"
     long "^4.0.0"
@@ -2138,6 +2139,11 @@ safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   version "5.1.2"
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.1.2.tgz#991ec69d296e0313747d59bdfd2b745c35f8828d"
   integrity sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==
+
+secure-json-parse@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/secure-json-parse/-/secure-json-parse-4.0.0.tgz#2ee1b7581be38ab348bab5a3e49280ba80a89c85"
+  integrity sha512-dxtLJO6sc35jWidmLxo7ij+Eg48PM/kleBsxpC8QJE0qJICe+KawkDQmvCMZUr9u7WKVHgMW6vy3fQ7zMiFZMA==
 
 semver@^7.3.7, semver@^7.5.2:
   version "7.5.4"

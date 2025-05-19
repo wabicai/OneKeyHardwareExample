@@ -90,8 +90,6 @@ function createLowlevelPlugin() {
       return new Promise((resolve) => {
         runPromise = createDeferred();
         const response = runPromise.promise;
-        // bridge.callHandler('receive', {}, async (response) => {
-        // })
         resolve(response);
       });
     },
